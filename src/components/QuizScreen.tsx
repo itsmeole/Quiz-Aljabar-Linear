@@ -79,14 +79,20 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ answers, onAnswer, onFin
         <div className="flex flex-col md:flex-row gap-6 p-6 max-w-7xl mx-auto w-full h-screen pt-20">
             {/* Main Question Area */}
             <div className="flex-1 flex flex-col gap-6">
-                <div className="glass-panel p-8 flex-1 flex flex-col justify-center relative">
-                    <div className={`absolute top-4 right-4 text-xl font-mono font-bold px-4 py-2 rounded-lg border ${timeLeft < 300 ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' : 'bg-blue-900/50 border-blue-800 text-blue-300'
-                        }`}>
+                <div className="glass-panel p-6 md:p-8 flex-1 flex flex-col justify-center relative">
+                    {/* Timer: Static on mobile, Absolute on Desktop */}
+                    <div className={`
+                        w-full text-center mb-6 md:mb-0 md:w-auto md:absolute md:top-4 md:right-4 
+                        text-xl font-mono font-bold px-4 py-2 rounded-lg border transition-all
+                        ${timeLeft < 300 ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' : 'bg-blue-900/50 border-blue-800 text-blue-300'}
+                    `}>
                         {formatTime(timeLeft)}
                     </div>
-                    <div className="mb-6 flex justify-between items-center text-sm text-gray-400">
-                        <span>Question {currentIdx + 1} of {questions.length}</span>
-                        <span className="bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-xs font-bold border border-blue-800">
+
+                    {/* Meta Info */}
+                    <div className="mb-6 flex flex-col items-start gap-2 md:flex-row md:justify-between md:items-center text-sm text-gray-400">
+                        <span className="font-medium text-white/60">Question {currentIdx + 1} of {questions.length}</span>
+                        <span className="bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-xs font-bold border border-blue-800 self-start md:self-auto">
                             {question.type === 'multiple-choice' ? 'Multiple Choice' : 'Essay'}
                         </span>
                     </div>
