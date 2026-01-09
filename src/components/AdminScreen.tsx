@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import type { QuizResult } from '../types';
 import { Download, RefreshCw } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable'; // Note: Might need install, or just use basic generic table text if complex
 
 export const AdminScreen: React.FC = () => {
     const [results, setResults] = useState<QuizResult[]>([]);
@@ -13,7 +11,14 @@ export const AdminScreen: React.FC = () => {
     const fetchResults = async () => {
         setLoading(true);
         if (!supabase) {
-            setError("Supabase client not initialized. Check .env variables.");
+            const url = import.meta.env.VITE_SUPABASE_URL;
+            const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            let msg = "Supabase client not initialized.";
+            if (!url) msg += " Missing VITE_SUPABASE_URL.";
+            if (!key) msg += " Missing VITE_SUPABASE_ANON_KEY.";
+
+            console.log("Debug Env:", { url, key }); // For user to check console
+            setError(msg);
             setLoading(false);
             return;
         }
@@ -122,8 +127,8 @@ export const AdminScreen: React.FC = () => {
                                             </td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-xs font-bold ${row.passed
-                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                                                        : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                                                    : 'bg-red-500/20 text-red-400 border border-red-500/50'
                                                     }`}>
                                                     {row.passed ? 'PASSED' : 'FAILED'}
                                                 </span>
