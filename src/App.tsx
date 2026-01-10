@@ -5,7 +5,7 @@ import { QuizScreen } from './components/QuizScreen';
 import { ReviewScreen } from './components/ReviewScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { AdminScreen } from './components/AdminScreen';
-import type { UserData, GameState, Question, QuizResult } from './types';
+import type { UserData, GameState, Question } from './types';
 import { linearAlgebraQuestions, calculusQuestions } from './data/questions';
 import { supabase } from './utils/supabaseClient';
 import bgImage from './assets/bg.png'; // FORCE IMPORT
