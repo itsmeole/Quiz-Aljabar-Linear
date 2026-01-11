@@ -11,7 +11,7 @@ import { quizService } from './services/quizService';
 import { supabase } from './utils/supabaseClient';
 import bgImage from './assets/bg.png'; // FORCE IMPORT
 
-const MAX_STRIKES = 3;
+const MAX_STRIKES = 5;
 
 function App() {
   const [gameState, setGameState] = useState<GameState>('WELCOME');
