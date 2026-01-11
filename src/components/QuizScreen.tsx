@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, Circle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Circle, Clock } from 'lucide-react';
 import type { Question } from '../types';
 
 interface QuizScreenProps {
@@ -81,22 +81,26 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ questions, answers, onAn
             {/* Main Question Area */}
             <div className="flex-1 flex flex-col gap-6">
                 <div className="glass-panel p-6 md:p-8 flex-1 flex flex-col justify-center relative">
-                    {/* Timer: Static on mobile, Absolute on Desktop */}
-                    <div className={`
-                        w-full text-center mb-6 md:mb-0 md:w-auto md:absolute md:top-4 md:right-4 
-                        text-xl font-mono font-bold px-4 py-2 rounded-lg border transition-all
-                        ${timeLeft < 300 ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' : 'bg-gray-500/30 border-white-800 text-white-300'}
-                    `}>
-                        {formatTime(timeLeft)}
+                    {/* Header: Meta Info & Timer */}
+                    <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-700/50 pb-4">
+                        <div className="flex flex-col gap-1">
+                            <span className="font-medium text-white/60 text-sm">Question {currentIdx + 1} of {questions.length}</span>
+                            <span className="text-xs text-gray-400 font-mono">
+                                {question.type === 'multiple-choice' ? 'Multiple Choice' : 'Essay'}
+                            </span>
+                        </div>
+
+                        {/* Timer */}
+                        <div className={`
+                            flex items-center gap-2 px-4 py-2 rounded-lg border font-mono font-bold text-lg transition-all w-full md:w-auto justify-center
+                            ${timeLeft < 300 ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' : 'bg-gray-600/50 border-gray-400 text-white-400'}
+                        `}>
+                            <Clock size={18} />
+                            {formatTime(timeLeft)}
+                        </div>
                     </div>
 
-                    {/* Meta Info */}
-                    <div className="mb-6 flex flex-col items-start gap-2 md:flex-row md:justify-between md:items-center text-sm text-gray-400">
-                        <span className="font-medium text-white/60">Question {currentIdx + 1} of {questions.length}</span>
-                        <span className="bg-white-900/50 text-white-300 px-3 py-1 rounded-full text-xs font-bold border border-gray-500/50 self-start md:self-auto">
-                            {question.type === 'multiple-choice' ? 'Multiple Choice' : 'Essay'}
-                        </span>
-                    </div>
+
 
                     <h2 className="text-xl md:text-2xl font-bold mb-8 leading-relaxed">
                         {question.text}
