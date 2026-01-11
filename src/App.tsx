@@ -6,7 +6,8 @@ import { ReviewScreen } from './components/ReviewScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { AdminScreen } from './components/AdminScreen';
 import type { UserData, GameState, Question } from './types';
-import { linearAlgebraQuestions, calculusQuestions } from './data/questions';
+// import { linearAlgebraQuestions, calculusQuestions } from './data/questions'; // REMOVED
+import { quizService } from './services/quizService';
 import { supabase } from './utils/supabaseClient';
 import bgImage from './assets/bg.png'; // FORCE IMPORT
 
@@ -48,11 +49,16 @@ function App() {
       }
     }
 
-    // Select Questions based on Subject
-    const selectedQuestions = data.subject === 'calculus' ? calculusQuestions : linearAlgebraQuestions;
+    // Fetch Questions from Supabase (Secure)
+    const questions = await quizService.getQuestions(data.subject);
+
+    if (!questions || questions.length === 0) {
+      setBlockedReason("Gagal memuat soal. Periksa koneksi internet atau hubungi admin.");
+      return;
+    }
 
     // Shuffle Questions
-    const shuffled = [...selectedQuestions].sort(() => Math.random() - 0.5);
+    const shuffled = [...questions].sort(() => Math.random() - 0.5);
     setShuffledQuestions(shuffled);
 
     setUserData(data);
@@ -72,34 +78,28 @@ function App() {
   };
 
   const handleSubmit = async () => {
-    // Calculate Score relative to original static questions (id-based lookup)
-    let correct = 0;
-    shuffledQuestions.forEach(q => {
-      if (answers[q.id] === q.correctIndex) {
-        correct++;
+    if (!userData) return;
+
+    try {
+      // Secure Server-Side Grading
+      const result = await quizService.submitQuiz(userData, answers);
+
+      if (result) {
+        // Result contains: { score, passed, correct_count, total_questions }
+        // We can use the score returned from DB
+        setScore(result.correct_count); // Update local score state for display
+
+        // We might need to adjust ResultScreen slightly if it relies on local calculation,
+        // but passing score (which is now correct_answer count) is fine.
+        // Wait, ResultScreen usually calculates % based on (score / totalQuestions). 
+        // result.correct_count is the raw number.
       }
-    });
-
-    // Save to Supabase
-    if (userData && supabase) {
-      const scorePct = Math.round((correct / shuffledQuestions.length) * 100);
-      const passed = scorePct >= 80;
-
-      const { error } = await supabase.from('quiz_results').insert([
-        {
-          name: userData.name,
-          nim: userData.nim,
-          class: userData.class,
-          subject: userData.subject === 'linear-algebra' ? 'Aljabar Linear' : 'Kalkulus',
-          score: scorePct,
-          passed: passed
-        }
-      ]);
-
-      if (error) console.error("Failed to save result:", error);
+    } catch (err) {
+      console.error("Failed to submit:", err);
+      alert("Gagal menyimpan jawaban. Coba lagi.");
+      return;
     }
 
-    setScore(correct);
     setGameState('RESULT');
   };
 
@@ -108,6 +108,7 @@ function App() {
     setAnswers({});
     setScore(0);
     setUserData(null);
+    setShuffledQuestions([]); // Clear previous questions
   };
 
   return (

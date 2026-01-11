@@ -5,7 +5,7 @@ export interface Question {
     text: string;
     type: QuestionType;
     options: string[];
-    correctIndex: number;
+    correctIndex?: number;
 }
 
 export interface UserData {
