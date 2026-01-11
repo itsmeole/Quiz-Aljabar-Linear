@@ -8,29 +8,16 @@ interface QuizScreenProps {
     onAnswer: (questionId: number, answerIndex: number) => void;
     onFinish: () => void;
     onAutoSubmit: () => void;
+    timeLeft: number;
 }
 
-export const QuizScreen: React.FC<QuizScreenProps> = ({ questions, answers, onAnswer, onFinish, onAutoSubmit }) => {
+export const QuizScreen: React.FC<QuizScreenProps> = ({ questions, answers, onAnswer, onFinish, onAutoSubmit, timeLeft }) => {
     const [currentIdx, setCurrentIdx] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds
+    // const [timeLeft, setTimeLeft] = useState(3600); // Removed local state
     const [violation, setViolation] = useState<string | null>(null);
     const question = questions[currentIdx];
 
-    // Timer Logic
-    React.useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    onAutoSubmit();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [onAutoSubmit]);
+    // Timer Logic - REMOVED (Handled in App.tsx)
 
     // Anti-Cheat: Tab Switch / Focus Loss
     React.useEffect(() => {

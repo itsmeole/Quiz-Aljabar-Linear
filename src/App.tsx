@@ -20,6 +20,9 @@ function App() {
   const [score, setScore] = useState(0);
   const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds, global state
+
+
 
   // Hidden Admin Route Check
   useEffect(() => {
@@ -29,8 +32,24 @@ function App() {
   }, []);
 
   const handleStart = async (data: UserData) => {
+    setBlockedReason(null);
+    setTimeLeft(3600); // Reset timer on start
+
     if (supabase) {
-      // Check for previous failures (3 Strikes Rule)
+      // 1. Check if ALREADY PASSED
+      const { data: passedData } = await supabase
+        .from('quiz_results')
+        .select('*')
+        .eq('nim', data.nim)
+        .eq('passed', true)
+        .limit(1);
+
+      if (passedData && passedData.length > 0) {
+        setBlockedReason("Selamat! Anda sudah lulus remedial ini sebelumnya. Tidak perlu mengerjakan lagi.");
+        return;
+      }
+
+      // 2. Check for previous failures (3 Strikes Rule)
       const { count, error } = await supabase
         .from('quiz_results')
         .select('*', { count: 'exact', head: true })
@@ -61,6 +80,11 @@ function App() {
     const shuffled = [...questions].sort(() => Math.random() - 0.5);
     setShuffledQuestions(shuffled);
 
+    // Mark session as active and save UserData for auto-recovery
+    localStorage.setItem('quiz_active', 'true');
+    localStorage.setItem('quiz_userData', JSON.stringify(data));
+    localStorage.setItem('quiz_answers', '{}');
+
     setUserData(data);
     setGameState('QUIZ');
   };
@@ -85,30 +109,50 @@ function App() {
       const result = await quizService.submitQuiz(userData, answers);
 
       if (result) {
-        // Result contains: { score, passed, correct_count, total_questions }
-        // We can use the score returned from DB
-        setScore(result.correct_count); // Update local score state for display
-
-        // We might need to adjust ResultScreen slightly if it relies on local calculation,
-        // but passing score (which is now correct_answer count) is fine.
-        // Wait, ResultScreen usually calculates % based on (score / totalQuestions). 
-        // result.correct_count is the raw number.
+        setScore(result.correct_count);
       }
     } catch (err) {
       console.error("Failed to submit:", err);
-      alert("Gagal menyimpan jawaban. Coba lagi.");
-      return;
+      // alert("Gagal menyimpan jawaban. Coba lagi."); // Optional: alert might be annoying if auto-submit
+      // But let's keep it for now or just log.
+      if (err instanceof Error && err.message !== 'Auto-submit') {
+        alert("Gagal menyimpan jawaban. Coba lagi.");
+        return;
+      }
     }
 
     setGameState('RESULT');
   };
+
+  // Timer Logic (Global)
+  useEffect(() => {
+    if ((gameState === 'QUIZ' || gameState === 'REVIEW') && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            handleSubmit(); // Auto submit when time runs out
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [gameState, timeLeft]);
 
   const handleRetry = () => {
     setGameState('WELCOME');
     setAnswers({});
     setScore(0);
     setUserData(null);
-    setShuffledQuestions([]); // Clear previous questions
+    setShuffledQuestions([]);
+    setTimeLeft(3600); // Reset timer on retry
+
+    // Clear all session flags
+    localStorage.removeItem('blocked_reason');
+    localStorage.removeItem('quiz_active');
+    localStorage.removeItem('quiz_userData');
+    localStorage.removeItem('quiz_answers');
   };
 
   return (
@@ -131,6 +175,7 @@ function App() {
           onAnswer={handleAnswer}
           onFinish={handleQuizFinish}
           onAutoSubmit={handleSubmit}
+          timeLeft={timeLeft} // Pass global timer
         />
       )}
 
